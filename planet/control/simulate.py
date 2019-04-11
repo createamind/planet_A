@@ -73,6 +73,7 @@ def collect_rollouts(
       0 * batch_env.observ,
       0 * batch_env.action,
       tf.zeros([num_agents], tf.float32))
+
   done, score, image, action, reward = tf.scan(
       simulate_fn, tf.range(duration),
       initializer, parallel_iterations=1)

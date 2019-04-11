@@ -123,16 +123,16 @@ from __future__ import print_function
 # LOGDIR = './carla_debug_log'
 
 
-TASK_NAME = "{tasks: [carla]}"
-IMG_SIZE = (64, 64)
-EPISODE_LEN = 900
-REPEATE = 1
-BATCHSIZE = 50
-REWARD_FUNC = 'custom3'
-USE_SENSOR = 'use_rgb'
-NUM_CHANNELS = 3
-SCENARIO = 'TOWN2_ONE_CURVE_0'
-LOGDIR = '~/Data/planet/carla_64_v1'
+# TASK_NAME = "{tasks: [carla]}"
+# IMG_SIZE = (64, 64)
+# EPISODE_LEN = 900
+# REPEATE = 1
+# BATCHSIZE = 50
+# REWARD_FUNC = 'custom3'
+# USE_SENSOR = 'use_rgb'
+# NUM_CHANNELS = 3
+# SCENARIO = 'TOWN2_ONE_CURVE_0'
+# LOGDIR = '~/Data/planet/carla_64_v1'
 
 
 # TASK_NAME = "{tasks: [breakout]}"
@@ -144,3 +144,14 @@ LOGDIR = '~/Data/planet/carla_64_v1'
 # USE_SENSOR = 'use_rgb'
 # NUM_CHANNELS = 3
 # LOGDIR = '~/Data/planet/breakout_128_h3'
+
+TASK_NAME = "{tasks: [carla]}"
+IMG_SIZE = (96, 96)
+EPISODE_LEN = 100
+REPEATE = 1
+BATCHSIZE = 50
+REWARD_FUNC = 'custom3'
+USE_SENSOR = 'use_rgb'
+NUM_CHANNELS = 3
+SCENARIO = 'TOWN2_ONE_CURVE_0'
+LOGDIR = '~/Data/planet/carla_debug'
