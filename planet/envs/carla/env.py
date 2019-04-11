@@ -27,7 +27,7 @@ from gym.spaces import Box, Discrete, Tuple
 
 from planet import REWARD_FUNC, IMG_SIZE,  USE_SENSOR, SCENARIO
 
-exec('from .scenarios import '+ SCENARIO + ' as SCENARIO')
+exec('from .scenarios import ' + SCENARIO + ' as SCENARIO')
 
 # from .scenarios import TOWN2_NPC, TOWN2_WEATHER, TOWN2_WEATHER_NPC,\
 #     LANE_KEEP, TOWN2_ALL, TOWN2_ONE_CURVE, TOWN2_ONE_CURVE_0, TOWN2_ONE_CURVE_STRAIGHT_NAV,TOWN2_STRAIGHT_DYNAMIC_0, TOWN2_STRAIGHT_0
@@ -88,7 +88,7 @@ ENV_CONFIG = {
     "convert_images_to_video": False,  # convert log_images to videos. when "verbose" is True.
     "verbose": False,    # print measurement information; write out measurement json file.
 
-    "enable_planner": False,
+    "enable_planner": True,
     "framestack": 1,  # note: only [1, 2] currently supported
     "early_terminate_on_collision": True,
     "reward_function": REWARD_FUNC,
@@ -226,9 +226,11 @@ class CarlaEnv(gym.Env):
         self.start_coord = None
         self.end_coord = None
         self.last_obs = None
+        self._global_step = 0
 
     def init_server(self):
         print("Initializing new Carla server...")
+        self._global_step = 0
         # Create a new server process and start the client.
         self.server_port = random.randint(10000, 60000)
         self.server_process = subprocess.Popen(
@@ -285,6 +287,7 @@ class CarlaEnv(gym.Env):
     def _reset(self):
         self.num_steps = 0
         self.total_reward = 0
+        self._global_step = 0
         self.prev_measurement = None
         self.prev_image = None
         self.episode_id = datetime.today().strftime("%Y-%m-%d_%H-%M-%S_%f")
@@ -419,6 +422,7 @@ class CarlaEnv(gym.Env):
     def step(self, action):
         try:
             obs = self._step(action)
+
             return obs
         except Exception:
             print("Error during step, terminating episode early",
@@ -430,6 +434,8 @@ class CarlaEnv(gym.Env):
     # image, py_measurements = self._read_observation()  --->  self.preprocess_image(image)   --->  step observation output
     # @set_timeout(10)
     def _step(self, action):
+        self._global_step += 1
+        # print(self._global_step)
         if self.config["discrete_actions"]:
             action = DISCRETE_ACTIONS[int(action)]  # Carla action is 2D.
         assert len(action) == 2, "Invalid action {}".format(action)
@@ -482,11 +488,11 @@ class CarlaEnv(gym.Env):
         py_measurements["total_reward"] = self.total_reward
 
         # done or not
-        done = False
-        # done = (self.num_steps > self.scenario["max_steps"]
-        #         or py_measurements["next_command"] == "REACH_GOAL" or py_measurements["intersection_offroad"] or py_measurements["intersection_otherlane"]
-        #         or (self.config["early_terminate_on_collision"]
-        #             and collided_done(py_measurements)))
+        # done = False
+        done = ((self.num_steps > self.scenario["max_steps"]
+                or py_measurements["next_command"] == "REACH_GOAL"
+                or (self.config["early_terminate_on_collision"]
+                    and collided_done(py_measurements))) and self._global_step > 51)
 
         py_measurements["done"] = done
         self.prev_measurement = py_measurements
@@ -581,7 +587,6 @@ class CarlaEnv(gym.Env):
 
             data = np.concatenate((data_l, data_r), axis=2)    # data: uint8(0 ~ 255),  shape(y_res, x_res, 6)
 
-
         return data
 
     def _read_observation(self):
@@ -613,9 +618,6 @@ class CarlaEnv(gym.Env):
             observation = [sensor_data["CameraRGB_L"], sensor_data["CameraRGB_R"]]
         else:
             observation = sensor_data[camera_name]
-
-
-
 
         cur = measurements.player_measurements
 
@@ -940,6 +942,8 @@ REWARD_FUNCTIONS = {
     "custom_depth": compute_reward_custom_depth,
     "lane_keep": compute_reward_lane_keep,
 }
+
+
 def compute_reward(env, prev, current):
     return REWARD_FUNCTIONS[env.config["reward_function"]](env, prev, current)
 

@@ -267,6 +267,46 @@ class DeepMindWrapper(object):
     return self._env.physics.render(
         *self._render_size, camera_id=self._camera_id)   # return: {ndarray}(64,64,3)
 
+#
+# class LimitDuration(object):
+#   """End episodes after specified number of steps."""
+#
+#   def __init__(self, env, duration):
+#     self._env = env
+#     self._duration = duration
+#     self._step = None
+#
+#   def __getattr__(self, name):
+#     return getattr(self._env, name)
+#
+#   def step(self, action):
+#     if self._step is None:
+#       raise RuntimeError('Must reset environment.')
+#     observ, reward, done, info = self._env.step(action)
+#     #print(done)
+#     self.step_error = False
+#     self._step += 1
+#     # print(self._step,self._duration, done)
+#
+#
+#     if self._step >= self._duration:    # if step error occurs, self._step will be reset to 0, then self._step will always < self._duration and done is False.
+#       done = True
+#       self._step = None
+#     else:
+#       # assert not done
+#       if done:
+#         print('step error... please check the env.')
+#         self.step_error = True
+#
+#     return observ, reward, done, info
+#
+#   def reset(self):
+#     self._step = 0        # if step error occurs, reset the env, self._step will be reset to 0.
+#     return self._env.reset()
+#
+
+
+
 
 class LimitDuration(object):
   """End episodes after specified number of steps."""
@@ -283,53 +323,23 @@ class LimitDuration(object):
     if self._step is None:
       raise RuntimeError('Must reset environment.')
     observ, reward, done, info = self._env.step(action)
-    #print(done)
     self.step_error = False
     self._step += 1
-    # print(self._step,self._duration, done)
-
-
-    if self._step >= self._duration:    # if step error occurs, self._step will be reset to 0, then self._step will always < self._duration and done is False.
+    # print("GLOBAL_STEP", self._step)
+    # early stop
+    if (self._step > 51 and done) or self._step >= self._duration:  # e.g. 100~1000
       done = True
       self._step = None
-    else:
-      # assert not done
-      if done:
+    elif self._step < 51 and done:
         print('step error... please check the env.')
         self.step_error = True
-
-
-    # if done == 'step_error':
-    #   print('step error... please check the env.')
-    #   self.step_error = True
-    #   done = True
-    # 
-    # elif self._step >= self._duration:
-    #   # print(self._step)
-    #   done = True
-    #   self._step = None
-
-
-    # if done == 'step_error':
-    #   print('step error... please check the env.')
-    #   self.step_error = True
-    #   done = True
-    #
-    # elif self._step <= 50:  # for num_chunks=1, chunk_length=50.
-    #   done = False
-    #
-    # elif done or self._step >= self._duration:
-    #   # print(self._step)
-    #   done = True
-    #   self._step = None
-
-
     return observ, reward, done, info
 
-
   def reset(self):
-    self._step = 0        # if step error occurs, reset the env, self._step will be reset to 0.
+    self._step = 0
     return self._env.reset()
+
+
 
 
 class ProcessObservation(object):

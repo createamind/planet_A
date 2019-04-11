@@ -61,6 +61,8 @@ def cross_entropy_method(
 
   mean = tf.zeros((original_batch, horizon) + action_shape)
   stddev = tf.ones((original_batch, horizon) + action_shape)
+
+
   mean, stddev = tf.scan(
       iteration, tf.range(iterations), (mean, stddev), back_prop=False)
   mean, stddev = mean[-1], stddev[-1]  # Select belief at last iterations.

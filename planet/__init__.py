@@ -125,13 +125,13 @@ from __future__ import print_function
 
 TASK_NAME = "{tasks: [carla]}"
 IMG_SIZE = (64, 64)
-EPISODE_LEN = 100
+EPISODE_LEN = 900
 REPEATE = 1
 BATCHSIZE = 50
 REWARD_FUNC = 'custom3'
 USE_SENSOR = 'use_rgb'
 NUM_CHANNELS = 3
-SCENARIO = 'TOWN2_WEATHER_NPC'
+SCENARIO = 'TOWN2_ONE_CURVE_0'
 LOGDIR = '~/Data/planet/carla_64_v1'
 
 

@@ -271,6 +271,7 @@ def print_metrics(metrics, step, every):
     means.append(mean)
     updates.append(mean.submit(value))
   with tf.control_dependencies(updates):
+    # step/score/loss/zs_entropy/zs_divergence =  [25000, -nan, 11413.0146, 37.0638504, 4.20143223]
     message = 'step/' + '/'.join(key for key, _ in metrics) + ' = '
     gs = tf.train.get_or_create_global_step()
     print_metrics = tf.cond(
