@@ -75,36 +75,22 @@ def cross_entropy_method(
   # print('>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<\n'*10)
 
   def f1():
-      mean[:, :, 0] = mean[:, :, 0] + 0.7
-      return mean
+      x = tf.concat([mean[:, :, 0]+0.7, mean[:, :, 1]], 0)
+      return tf.expand_dims(tf.transpose(x), 0)
 
   def f2():
-      mean[:, :, 1] = mean[:, :, 1] + 0.7
-      return mean
+      x = tf.concat([mean[:, :, 0], mean[:, :, 1]+0.7], 0)
+      return tf.expand_dims(tf.transpose(x), 0)
 
   def f3():
-      mean[:, :, 2] = mean[:, :, 2] - 0.7
-      return mean
-
-  mean = tf.case({tf.equal(command, 1): f1,
-                  tf.equal(command, 2): f2,
-                  tf.equal(command, 3): f3}, exclusive=True)
-
-
-  if command == 2:
-    print("command is>>>>>>>>>>", command)
-    mean += 0.7
-  elif command == 3:
-    print("command is>>>>>>>>>>", command)
-    mean += -0.7
-  elif command == 0:
-    print("command is>>>>>>>>>>", command)
-
-  elif command == 1:
-    print("command is>>>>>>>>>>", command)
-
-  elif command == 4:
-    print("command is>>>>>>>>>>", command)
+      x = tf.concat([mean[:, :, 0], mean[:, :, 1]-0.7], 0)
+      return tf.expand_dims(tf.transpose(x), 0)
+  command = tf.reshape(command, (1, -1))
+  mean = tf.case({tf.reduce_all(tf.equal(command, 1)): f1,
+                  tf.reduce_all(tf.equal(command, 2)): f2,
+                  tf.reduce_all(tf.equal(command, 3)): f3,
+                  tf.reduce_all(tf.equal(command, 0)): f1,
+                  tf.reduce_all(tf.equal(command, 4)): f1}, exclusive=True)
 
   stddev = tf.ones((original_batch, horizon) + action_shape)
 
