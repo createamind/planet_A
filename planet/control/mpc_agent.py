@@ -24,7 +24,7 @@ from planet.tools import nested
 
 class MPCAgent(object):
 
-  def __init__(self, batch_env, step, is_training, should_log, config):
+  def __init__(self, batch_env, step, is_training, should_log, config, command):
     self._batch_env = batch_env
     self._step = step  # Trainer step, not environment step.
     self._is_training = is_training
@@ -41,6 +41,7 @@ class MPCAgent(object):
         'prev_action_var', shape=self._batch_env.action.shape,
         initializer=lambda *_, **__: tf.zeros_like(self._batch_env.action),
         use_resource=True)
+    self.command = command
 
   def begin_episode(self, agent_indices):
     state = nested.map(
@@ -67,7 +68,7 @@ class MPCAgent(object):
     action = self._config.planner(
         self._cell, self._config.objective, state,
         embedded.shape[1:].as_list(),
-        prev_action.shape[1:].as_list())
+        prev_action.shape[1:].as_list(), command=self.command)
     action = action[:, 0]
     if self._config.exploration:
       scale = self._config.exploration.scale

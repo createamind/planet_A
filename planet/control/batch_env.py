@@ -93,7 +93,9 @@ class BatchEnv(object):
     observ = np.stack(observs)
     reward = np.stack(rewards)
     done = np.stack(dones)
-    info = tuple(infos)
+    # print('<<<<<<<<<<<<<<<<', infos, '<<<<<<<<<<<<<<')
+    # info = tuple(infos["command"])
+    info = infos[0]["command"]
     return observ, reward, done, info
 
   def reset(self, indices=None):

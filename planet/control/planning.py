@@ -21,12 +21,18 @@ import tensorflow as tf
 
 from planet.control import discounted_return
 from planet import tools
-
+COMMAND_ORDINAL = {
+    "REACH_GOAL": 0,
+    "GO_STRAIGHT": 1,
+    "TURN_RIGHT": 2,
+    "TURN_LEFT": 3,
+    "LANE_FOLLOW": 4,
+}
 
 def cross_entropy_method(
     cell, objective_fn, state, obs_shape, action_shape, horizon,
     amount=1000, topk=100, iterations=10, discount=0.99,
-    min_action=-1, max_action=1):
+    min_action=-1, max_action=1, command=1):
   obs_shape, action_shape = tuple(obs_shape), tuple(action_shape)
   original_batch = tools.shape(tools.nested.flatten(state)[0])[0]
   initial_state = tools.nested.map(lambda tensor: tf.tile(
@@ -47,6 +53,7 @@ def cross_entropy_method(
         action, (extended_batch, horizon) + action_shape)
     (_, state), _ = tf.nn.dynamic_rnn(
         cell, (0 * obs, action, use_obs), initial_state=initial_state)
+    print(action)
     reward = objective_fn(state)
     return_ = discounted_return.discounted_return(
         reward, length, discount)[:, 0]
@@ -60,8 +67,29 @@ def cross_entropy_method(
     return mean, stddev
 
   mean = tf.zeros((original_batch, horizon) + action_shape)
-  stddev = tf.ones((original_batch, horizon) + action_shape)
+  if command == 1:
+      pass
+  if command == 2:
+    pass
+  if command == 3:
+    pass
+  # print('>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<\n'*10)
+  # if command == 2:
+  #   print("command is>>>>>>>>>>", command)
+  #   mean += 0.7
+  # elif command == 3:
+  #   print("command is>>>>>>>>>>", command)
+  #   mean += -0.7
+  # elif command == 0:
+  #   print("command is>>>>>>>>>>", command)
+  #
+  # elif command == 1:
+  #   print("command is>>>>>>>>>>", command)
+  #
+  # elif command == 4:
+  #   print("command is>>>>>>>>>>", command)
 
+  stddev = tf.ones((original_batch, horizon) + action_shape)
 
   mean, stddev = tf.scan(
       iteration, tf.range(iterations), (mean, stddev), back_prop=False)

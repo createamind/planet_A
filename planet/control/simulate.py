@@ -28,8 +28,7 @@ from planet.control import wrappers
 from planet.tools import streaming_mean
 
 
-def simulate(
-    step, env_ctor, duration, num_agents, agent_config,
+def simulate(step, env_ctor, duration, num_agents, agent_config,
     env_processes=False, name='simulate'):
   summaries = []
   with tf.variable_scope(name):
@@ -51,10 +50,11 @@ def simulate(
   return summary, return_mean
 
 
-def collect_rollouts(
-    step, env_ctor, duration, num_agents, agent_config, env_processes):
+def collect_rollouts(step, env_ctor, duration, num_agents, agent_config, env_processes):
+
   batch_env = define_batch_env(env_ctor, num_agents, env_processes)
-  agent = mpc_agent.MPCAgent(batch_env, step, False, False, agent_config)
+  command = batch_env.command
+  agent = mpc_agent.MPCAgent(batch_env, step, False, False, agent_config, command)
 
   def simulate_fn(unused_last, step):
     done, score, unused_summary = simulate_step(
@@ -65,7 +65,9 @@ def collect_rollouts(
       image = batch_env.observ
       batch_action = batch_env.action
       batch_reward = batch_env.reward
-    return done, score, image, batch_action, batch_reward
+      # command = batch_env.command
+
+    return done, score, image, batch_action, batch_reward  # , command
 
   initializer = (
       tf.zeros([num_agents], tf.bool),
@@ -81,6 +83,7 @@ def collect_rollouts(
   image = tf.transpose(image, [1, 0, 2, 3, 4])
   action = tf.transpose(action, [1, 0, 2])
   reward = tf.transpose(reward)
+  # command = tf.transpose(command)
   return score, image, action, reward
 
 
@@ -96,7 +99,8 @@ def define_batch_env(env_ctor, num_agents, env_processes):
     env = in_graph_batch_env.InGraphBatchEnv(env)
   return env
 
-
+#env.command
+# <tf.Tensor 'graph/collection/should_collect_carla/simulate-1/train-carla-cem-12/Cast:0' shape=(1,) dtype=int32>
 def simulate_step(batch_env, algo, log=True, reset=False):
   """Simulation step of a vectorized algorithm with in-graph environments.
 

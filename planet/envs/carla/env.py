@@ -514,8 +514,8 @@ class CarlaEnv(gym.Env):
 
         self.num_steps += 1
         image = self.preprocess_image(image)
-        return (self.encode_obs(image, py_measurements), reward, done,
-                py_measurements)
+        info = np.array(COMMAND_ORDINAL[py_measurements["next_command"]], np.float32).astype(np.float32)
+        return (self.encode_obs(image, py_measurements), reward, done, info)
 
     def images_to_video(self):
         videos_dir = os.path.join(CARLA_OUT_PATH, "Videos")

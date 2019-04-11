@@ -252,7 +252,7 @@ class DeepMindWrapper(object):
     obs = dict(time_step.observation)
     reward = time_step.reward or 0
     done = time_step.last()
-    info = {'discount': time_step.discount}
+    info = {'discount': time_step.discount, 'command': time_step.info}
     return obs, reward, done, info
 
   def reset(self):
@@ -432,6 +432,7 @@ class CollectGymDataset(object):
       return lambda: self._process_reset(future())
 
   def _process_step(self, action, observ, reward, done, info):
+    # command = info
     self._transition.update({'action': action, 'reward': reward})
     self._transition.update(info)
     self._episode.append(self._transition)

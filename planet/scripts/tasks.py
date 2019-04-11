@@ -300,12 +300,12 @@ class DeepMindWrapper_carla(object):
   def step(self, action):
     self.img, reward, done, info = self._env.step(action)
     # print(self.img)
-    obs = {'state':np.array([0.0])}
-    return obs, reward, done, {}
+    obs = {'state': np.array([0.0])}
+    return obs, reward, done, {"command": info}
 
   def reset(self):
     self.img = self._env.reset()
-    return {'state':np.array([0.0])}
+    return {'state': np.array([0.0])}
 
   def render(self, *args, **kwargs):
     if kwargs.get('mode', 'rgb_array') != 'rgb_array':

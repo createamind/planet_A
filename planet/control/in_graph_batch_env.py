@@ -53,6 +53,9 @@ class InGraphBatchEnv(object):
       self._reward = tf.get_variable(
           'reward', batch_dims, tf.float32,
           tf.constant_initializer(0), trainable=False)
+      self._info = tf.get_variable(
+          'command', batch_dims, tf.float32,
+          tf.constant_initializer(0), trainable=False)
       # This variable should be boolean, but tf.scatter_update() does not
       # support boolean resource variables yet.
       self._done = tf.get_variable(
@@ -91,14 +94,16 @@ class InGraphBatchEnv(object):
     """
     with tf.name_scope('environment/simulate'):
       observ_dtype = self._parse_dtype(self._batch_env.observation_space)
-      observ, reward, done = tf.py_func(
-          lambda a: self._batch_env.step(a)[:3], [action],
-          [observ_dtype, tf.float32, tf.bool], name='step')
+      observ, reward, done, info = tf.py_func(
+          lambda a: self._batch_env.step(a), [action],
+          [observ_dtype, tf.float32, tf.bool, tf.float32], name='step')
+      # print("<<<"*20, info)
       return tf.group(
           self._observ.assign(observ),
           self._action.assign(action),
           self._reward.assign(reward),
-          self._done.assign(tf.to_int32(done)))
+          self._done.assign(tf.to_int32(done)),
+          self._info.assign(info))
 
   def reset(self, indices=None):
     """Reset the batch of environments.
@@ -141,6 +146,11 @@ class InGraphBatchEnv(object):
   def done(self):
     """Access the variable indicating whether the episode is done."""
     return tf.cast(self._done, tf.bool)
+
+  @property
+  def command(self):
+    """Access the variable indicating whether the episode is done."""
+    return tf.cast(self._info, tf.int32)
 
   def close(self):
     """Send close messages to the external process and join them."""

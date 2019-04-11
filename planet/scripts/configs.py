@@ -179,7 +179,7 @@ def _define_optimizers(config, params):
 
 
 def _initial_collection(config, params):
-  num_seed_episodes = params.get('num_seed_episodes', 5)   # 5 initial random episodes
+  num_seed_episodes = params.get('num_seed_episodes', 1)   # 5 initial random episodes
   sims = tools.AttrDict(_unlocked=True)
   for task in config.tasks:
     sims['train-' + task.name] = tools.AttrDict(

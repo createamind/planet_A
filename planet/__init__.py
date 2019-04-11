@@ -146,8 +146,8 @@ from __future__ import print_function
 # LOGDIR = '~/Data/planet/breakout_128_h3'
 
 TASK_NAME = "{tasks: [carla]}"
-IMG_SIZE = (96, 96)
-EPISODE_LEN = 100
+IMG_SIZE = (64, 64)
+EPISODE_LEN = 60
 REPEATE = 1
 BATCHSIZE = 50
 REWARD_FUNC = 'custom3'
