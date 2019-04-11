@@ -44,6 +44,8 @@ def cross_entropy_method(
 
   def iteration(mean_and_stddev, _):
     mean, stddev = mean_and_stddev
+    # mean 1 12 2
+    # stddev 1 12 2
     # Sample action proposals from belief.
     normal = tf.random_normal((original_batch, amount, horizon) + action_shape)
     action = normal * stddev[:, None] + mean[:, None]
@@ -53,7 +55,10 @@ def cross_entropy_method(
         action, (extended_batch, horizon) + action_shape)
     (_, state), _ = tf.nn.dynamic_rnn(
         cell, (0 * obs, action, use_obs), initial_state=initial_state)
-    print(action)
+    # action
+    # Tensor(
+    #     "graph/collection/should_collect_carla/simulate-1/train-carla-cem-12/scan/while/simulate/scan/while/Reshape:0",
+    #     shape=(1000, 12, 2), dtype=float32)
     reward = objective_fn(state)
     return_ = discounted_return.discounted_return(
         reward, length, discount)[:, 0]
@@ -67,27 +72,39 @@ def cross_entropy_method(
     return mean, stddev
 
   mean = tf.zeros((original_batch, horizon) + action_shape)
-  if command == 1:
-      pass
-  if command == 2:
-    pass
-  if command == 3:
-    pass
   # print('>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<\n'*10)
-  # if command == 2:
-  #   print("command is>>>>>>>>>>", command)
-  #   mean += 0.7
-  # elif command == 3:
-  #   print("command is>>>>>>>>>>", command)
-  #   mean += -0.7
-  # elif command == 0:
-  #   print("command is>>>>>>>>>>", command)
-  #
-  # elif command == 1:
-  #   print("command is>>>>>>>>>>", command)
-  #
-  # elif command == 4:
-  #   print("command is>>>>>>>>>>", command)
+
+  def f1():
+      mean[:, :, 0] = mean[:, :, 0] + 0.7
+      return mean
+
+  def f2():
+      mean[:, :, 1] = mean[:, :, 1] + 0.7
+      return mean
+
+  def f3():
+      mean[:, :, 2] = mean[:, :, 2] - 0.7
+      return mean
+
+  mean = tf.case({tf.equal(command, 1): f1,
+                  tf.equal(command, 2): f2,
+                  tf.equal(command, 3): f3}, exclusive=True)
+
+
+  if command == 2:
+    print("command is>>>>>>>>>>", command)
+    mean += 0.7
+  elif command == 3:
+    print("command is>>>>>>>>>>", command)
+    mean += -0.7
+  elif command == 0:
+    print("command is>>>>>>>>>>", command)
+
+  elif command == 1:
+    print("command is>>>>>>>>>>", command)
+
+  elif command == 4:
+    print("command is>>>>>>>>>>", command)
 
   stddev = tf.ones((original_batch, horizon) + action_shape)
 
