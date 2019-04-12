@@ -43,7 +43,7 @@ def cross_entropy_method(
   length = tf.ones([extended_batch], dtype=tf.int32) * horizon
 
   def iteration(mean_and_stddev, _):
-    mean, stddev = mean_and_stddev
+    mean, stddev, command = mean_and_stddev
     # mean 1 12 2
     # stddev 1 12 2
     # Sample action proposals from belief.
@@ -60,16 +60,33 @@ def cross_entropy_method(
     #     "graph/collection/should_collect_carla/simulate-1/train-carla-cem-12/scan/while/simulate/scan/while/Reshape:0",
     #     shape=(1000, 12, 2), dtype=float32)
     reward = objective_fn(state)
+    bond_turn = tf.reshape(tf.reduce_sum(action[:, :, 1], axis=1), [1, 1000])
+    bond_turn = tf.clip_by_value(bond_turn, -12, 12)
+    bond_straight = tf.reshape(tf.reduce_sum(action[:, :, 0], axis=1), [1, 1000])
+    bond_straight = tf.clip_by_value(bond_straight, 0, 12)
+
+    def f1(): return bond_turn   # right turn bond
+
+    def f2(): return -bond_turn  # left turn bond
+
+    def f3(): return bond_straight
+
+    # bond = tf.case({tf.reduce_all(tf.equal(command, 2)): f1,
+    #                 tf.reduce_all(tf.equal(command, 3)): f2}, default=f3, exclusive=True)
+    bond = tf.case({tf.reduce_all(tf.equal(command, 2)): f2,
+                    tf.reduce_all(tf.equal(command, 3)): f2}, default=f3, exclusive=True)
+
     return_ = discounted_return.discounted_return(
         reward, length, discount)[:, 0]
     return_ = tf.reshape(return_, (original_batch, amount))
+    return_ += bond
     # Re-fit belief to the best ones.
     _, indices = tf.nn.top_k(return_, topk, sorted=False)
     indices += tf.range(original_batch)[:, None] * amount
     best_actions = tf.gather(action, indices)
     mean, variance = tf.nn.moments(best_actions, 1)
     stddev = tf.sqrt(variance + 1e-6)
-    return mean, stddev
+    return mean, stddev, command
 
   mean = tf.zeros((original_batch, horizon) + action_shape)
   # print('>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<\n'*10)
@@ -86,15 +103,12 @@ def cross_entropy_method(
       x = tf.concat([mean[:, :, 0]+0.3, mean[:, :, 1]-0.7], 0)
       return tf.expand_dims(tf.transpose(x), 0)
   command = tf.reshape(command, (1, -1))
-  mean = tf.case({tf.reduce_all(tf.equal(command, 1)): f1,
-                  tf.reduce_all(tf.equal(command, 2)): f2,
-                  tf.reduce_all(tf.equal(command, 3)): f3,
-                  tf.reduce_all(tf.equal(command, 0)): f1,
-                  tf.reduce_all(tf.equal(command, 4)): f1}, exclusive=True)
+  _mean = tf.case({tf.reduce_all(tf.equal(command, 2)): f2,
+                  tf.reduce_all(tf.equal(command, 3)): f3}, default=f1, exclusive=True)
 
   stddev = tf.ones((original_batch, horizon) + action_shape)
 
-  mean, stddev = tf.scan(
-      iteration, tf.range(iterations), (mean, stddev), back_prop=False)
+  mean, stddev, command = tf.scan(
+      iteration, tf.range(iterations), (mean, stddev, command * tf.ones([1, 12, 2], dtype=tf.int32)), back_prop=False)
   mean, stddev = mean[-1], stddev[-1]  # Select belief at last iterations.
   return mean

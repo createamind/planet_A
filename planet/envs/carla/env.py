@@ -996,7 +996,7 @@ if __name__ == "__main__":
             if ENV_CONFIG["discrete_actions"]:
                 obs, reward, done, info = env.step(3)
             else:
-                obs, reward, done, info = env.step([0.5, 0])
+                obs, reward, done, info = env.step([0.5, 0.5])
             total_reward += reward
             print(i, "reward", reward, "total", total_reward, "done", done)
 

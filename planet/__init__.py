@@ -147,7 +147,7 @@ from __future__ import print_function
 
 TASK_NAME = "{tasks: [carla]}"
 IMG_SIZE = (64, 64)
-EPISODE_LEN = 600
+EPISODE_LEN = 150
 REPEATE = 1
 BATCHSIZE = 40
 REWARD_FUNC = 'custom3'
