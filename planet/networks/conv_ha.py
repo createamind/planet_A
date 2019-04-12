@@ -36,7 +36,7 @@ def encoder(obs):
   kwargs2 = dict(strides=2, activation=tf.nn.relu)
   kwargs3 = dict(strides=3, activation=tf.nn.relu)
   kwargs1 = dict(strides=1, activation=tf.nn.relu)
-  kwargs = dict(strides=1, activation=tf.nn.elu)
+  kwargs = dict(strides=2, activation=tf.nn.elu)
   hidden = tf.reshape(obs['image'], [-1] + obs['image'].shape[2:].as_list())   # (50,50,64,64,3) reshape to (2500,64,64,3)
 
   if obs_size == (32, 32):
@@ -51,25 +51,25 @@ def encoder(obs):
     hidden = tf.layers.conv2d(hidden, 128, 4, **kwargs2)
     hidden = tf.layers.conv2d(hidden, 256, 4, **kwargs2)
 
+  elif obs_size == (96, 96):
+    hidden = tf.layers.conv2d(hidden, 32, 8, **kwargs)
+    hidden = tf.layers.conv2d(hidden, 64, 5, **kwargs)
+    hidden = tf.layers.conv2d(hidden, 72, 5, **kwargs)
+    hidden = tf.layers.conv2d(hidden, 128, 5, **kwargs)
+    hidden = tf.layers.conv2d(hidden, 1024, 3, strides=1)
   # elif obs_size == (96, 96):
+  #   # conv_base = MobileNetV2(include_top=False, input_shape=(96, 96, 3))
+  #   # conv_base.trainable = False
+  #   # hidden = conv_base(hidden)    # shape=(50, 3, 3, 1280)
   #   hidden = tf.layers.conv2d(hidden, 32, 8, **kwargs)
   #   hidden = tf.layers.conv2d(hidden, 64, 5, **kwargs)
   #   hidden = tf.layers.conv2d(hidden, 72, 5, **kwargs)
   #   hidden = tf.layers.conv2d(hidden, 128, 5, **kwargs)
-  #   hidden = tf.layers.conv2d(hidden, 1024, 3, strides=1)
-  elif obs_size == (96, 96):
-    conv_base = MobileNetV2(include_top=False, input_shape=(96, 96, 3))
-    conv_base.trainable = False
-    hidden = conv_base(hidden)    # shape=(50, 3, 3, 1280)
-    # hidden = tf.layers.conv2d(hidden, 32, 8, **kwargs)
-    # hidden = tf.layers.conv2d(hidden, 64, 5, **kwargs)
-    # hidden = tf.layers.conv2d(hidden, 72, 5, **kwargs)
-    # hidden = tf.layers.conv2d(hidden, 128, 5, **kwargs)
-
-    hidden = tf.layers.conv2d(hidden, 1024, 3, strides=(1, 1), activation=tf.nn.elu)
-    hidden = tf.layers.flatten(hidden)
-    hidden = tf.layers.Dense(1024, tf.nn.elu)(hidden)
-    # hidden = tf.layers.Dense(hidden, 1024, tf.nn.elu)
+  #
+  #   hidden = tf.layers.conv2d(hidden, 1024, 3, strides=(1, 1), activation=tf.nn.elu)
+  #   hidden = tf.layers.flatten(hidden)
+  #   hidden = tf.layers.Dense(1024, tf.nn.elu)(hidden)
+  #   # hidden = tf.layers.Dense(hidden, 1024, tf.nn.elu)
 
   elif obs_size == (128, 128):
     hidden = tf.layers.conv2d(hidden, 32, 4, **kwargs2)
@@ -93,7 +93,7 @@ def decoder(state, data_shape):
   kwargs2 = dict(strides=2, activation=tf.nn.relu)
   kwargs3 = dict(strides=3, activation=tf.nn.relu)
   kwargs1 = dict(strides=1, activation=tf.nn.relu)
-  kwargs = dict(strides=2, activation=tf.nn.relu)
+  kwargs = dict(strides=2, activation=tf.nn.elu)
   hidden = tf.layers.dense(state, 1024, None)
   hidden = tf.reshape(hidden, [-1, 1, 1, hidden.shape[-1].value])
 

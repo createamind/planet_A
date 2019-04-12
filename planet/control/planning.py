@@ -61,20 +61,26 @@ def cross_entropy_method(
     #     shape=(1000, 12, 2), dtype=float32)
     reward = objective_fn(state)
     bond_turn = tf.reshape(tf.reduce_sum(action[:, :, 1], axis=1), [1, 1000])
-    bond_turn = tf.clip_by_value(bond_turn, -12, 12)
-    bond_straight = tf.reshape(tf.reduce_sum(action[:, :, 0], axis=1), [1, 1000])
-    bond_straight = tf.clip_by_value(bond_straight, 0, 12)
+    bond_turn = tf.clip_by_value(bond_turn, -10, 10)
+    bond_keep = tf.reshape(tf.reduce_sum(action[:, :, 0], axis=1), [1, 1000])
+    bond_straight = tf.reshape(tf.reduce_sum(action[:, :, 0], axis=1), [1, 1000]) - \
+                    tf.abs(tf.reshape(tf.reduce_sum(action[:, :, 1], axis=1), [1, 1000]))
+    bond_straight = tf.clip_by_value(bond_straight, -8, 8)
+    bond_keep = tf.clip_by_value(bond_keep, -8, 8)
 
-    def f1(): return bond_turn   # right turn bond
+    def f1(): return bond_straight   # go straight bond
 
-    def f2(): return -bond_turn  # left turn bond
+    def f2(): return bond_turn + 0.2 * bond_keep      # right turn bond
 
-    def f3(): return bond_straight
+    def f3(): return -bond_turn + 0.2 * bond_keep     # left turn bond
+
+    def f4(): return bond_keep       # lane keep bond
 
     # bond = tf.case({tf.reduce_all(tf.equal(command, 2)): f1,
     #                 tf.reduce_all(tf.equal(command, 3)): f2}, default=f3, exclusive=True)
     bond = tf.case({tf.reduce_all(tf.equal(command, 2)): f2,
-                    tf.reduce_all(tf.equal(command, 3)): f2}, default=f3, exclusive=True)
+                    tf.reduce_all(tf.equal(command, 3)): f3,
+                    tf.reduce_all(tf.equal(command, 4)): f4}, default=f1, exclusive=True)
 
     return_ = discounted_return.discounted_return(
         reward, length, discount)[:, 0]
@@ -92,18 +98,18 @@ def cross_entropy_method(
   # print('>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<\n'*10)
 
   def f1():
-      x = tf.concat([mean[:, :, 0]+0.7, mean[:, :, 1]], 0)
+      x = tf.concat([mean[:, :, 0]+0.6, mean[:, :, 1]], 0)
       return tf.expand_dims(tf.transpose(x), 0)
 
   def f2():
-      x = tf.concat([mean[:, :, 0]+0.3, mean[:, :, 1]+0.7], 0)
+      x = tf.concat([mean[:, :, 0]+0.2, mean[:, :, 1]+0.3], 0)
       return tf.expand_dims(tf.transpose(x), 0)
 
   def f3():
-      x = tf.concat([mean[:, :, 0]+0.3, mean[:, :, 1]-0.7], 0)
+      x = tf.concat([mean[:, :, 0]+0.2, mean[:, :, 1]-0.3], 0)
       return tf.expand_dims(tf.transpose(x), 0)
   command = tf.reshape(command, (1, -1))
-  _mean = tf.case({tf.reduce_all(tf.equal(command, 2)): f2,
+  mean = tf.case({tf.reduce_all(tf.equal(command, 2)): f2,
                   tf.reduce_all(tf.equal(command, 3)): f3}, default=f1, exclusive=True)
 
   stddev = tf.ones((original_batch, horizon) + action_shape)
