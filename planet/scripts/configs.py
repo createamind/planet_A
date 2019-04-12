@@ -76,7 +76,7 @@ def _model_components(config, params):
   config.decoder = network.decoder
   config.heads = tools.AttrDict(image=config.decoder)
   size = params.get('model_size', 200)
-  state_size = params.get('state_size', 30)
+  state_size = params.get('state_size', 48)
   model = params.get('model', 'rssm')
   if model == 'ssm':
     config.cell = functools.partial(
@@ -179,7 +179,7 @@ def _define_optimizers(config, params):
 
 
 def _initial_collection(config, params):
-  num_seed_episodes = params.get('num_seed_episodes', 1)   # 5 initial random episodes
+  num_seed_episodes = params.get('num_seed_episodes', 5)   # 5 initial random episodes
   sims = tools.AttrDict(_unlocked=True)
   for task in config.tasks:
     sims['train-' + task.name] = tools.AttrDict(

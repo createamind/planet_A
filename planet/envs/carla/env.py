@@ -871,10 +871,10 @@ def compute_reward_custom3(env, prev, current):
         reward -= 300.0
 
     # Sidewalk intersection [0, 1]
-    reward -= 5 * (current["forward_speed"]+1.0) * current["intersection_offroad"]
+    reward -= 2 * (current["forward_speed"]+1.0) * current["intersection_offroad"]
     # print(current["intersection_offroad"])
     # Opposite lane intersection
-    reward -= 2 * (current["forward_speed"]+1.0) * current["intersection_otherlane"]  # [0 ~ 1]
+    reward -= 1 * (current["forward_speed"]+1.0) * current["intersection_otherlane"]  # [0 ~ 1]
 
     return reward
 

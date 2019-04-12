@@ -79,11 +79,11 @@ def cross_entropy_method(
       return tf.expand_dims(tf.transpose(x), 0)
 
   def f2():
-      x = tf.concat([mean[:, :, 0], mean[:, :, 1]+0.7], 0)
+      x = tf.concat([mean[:, :, 0]+0.3, mean[:, :, 1]+0.7], 0)
       return tf.expand_dims(tf.transpose(x), 0)
 
   def f3():
-      x = tf.concat([mean[:, :, 0], mean[:, :, 1]-0.7], 0)
+      x = tf.concat([mean[:, :, 0]+0.3, mean[:, :, 1]-0.7], 0)
       return tf.expand_dims(tf.transpose(x), 0)
   command = tf.reshape(command, (1, -1))
   mean = tf.case({tf.reduce_all(tf.equal(command, 1)): f1,

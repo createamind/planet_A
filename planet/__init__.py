@@ -147,9 +147,9 @@ from __future__ import print_function
 
 TASK_NAME = "{tasks: [carla]}"
 IMG_SIZE = (64, 64)
-EPISODE_LEN = 60
+EPISODE_LEN = 600
 REPEATE = 1
-BATCHSIZE = 50
+BATCHSIZE = 40
 REWARD_FUNC = 'custom3'
 USE_SENSOR = 'use_rgb'
 NUM_CHANNELS = 3
