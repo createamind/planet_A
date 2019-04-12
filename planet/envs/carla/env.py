@@ -15,7 +15,8 @@ import subprocess
 import sys
 import time
 import traceback
-
+import tensorflow as tf
+from keras.applications import VGG16, MobileNetV2
 import numpy as np
 try:
     import scipy.misc
@@ -25,12 +26,12 @@ except Exception:
 import gym
 from gym.spaces import Box, Discrete, Tuple
 
-from planet import REWARD_FUNC, IMG_SIZE,  USE_SENSOR, SCENARIO
+from planet import REWARD_FUNC, IMG_SIZE,  USE_SENSOR, SCENARIO, PRETRAIN
 
-exec('from .scenarios import ' + SCENARIO + ' as SCENARIO')
+# exec('from .scenarios import ' + SCENARIO + ' as SCENARIO')
 
-# from .scenarios import TOWN2_NPC, TOWN2_WEATHER, TOWN2_WEATHER_NPC,\
-#     LANE_KEEP, TOWN2_ALL, TOWN2_ONE_CURVE, TOWN2_ONE_CURVE_0, TOWN2_ONE_CURVE_STRAIGHT_NAV,TOWN2_STRAIGHT_DYNAMIC_0, TOWN2_STRAIGHT_0
+from scenarios import TOWN2_NPC, TOWN2_WEATHER, TOWN2_WEATHER_NPC,\
+    LANE_KEEP, TOWN2_ALL, TOWN2_ONE_CURVE, TOWN2_ONE_CURVE_0, TOWN2_ONE_CURVE_STRAIGHT_NAV,TOWN2_STRAIGHT_DYNAMIC_0, TOWN2_STRAIGHT_0
 
 # Set this where you want to save image outputs (or empty string to disable)
 CARLA_OUT_PATH = os.environ.get("CARLA_OUT", os.path.expanduser("~/carla_out"))
@@ -85,7 +86,7 @@ GROUND_Z = 0.22
 # Default environment configuration
 ENV_CONFIG = {
     "log_images": False,  # log images in _read_observation().
-    "convert_images_to_video": False,  # convert log_images to videos. when "verbose" is True.
+    "convert_images_to_video": False,  # convert log_images to videos. when "verbose" is True.G
     "verbose": False,    # print measurement information; write out measurement json file.
 
     "enable_planner": True,
@@ -97,7 +98,7 @@ ENV_CONFIG = {
     "x_res": 64,  # cv2.resize()
     "y_res": 64,  # cv2.resize()
     "server_map": "/Game/Maps/Town02",
-    "scenarios": SCENARIO,
+    "scenarios": TOWN2_ONE_CURVE,#SCENARIO,
     "use_sensor": USE_SENSOR,
     "discrete_actions": False,
     "squash_action_logits": False,
@@ -123,25 +124,6 @@ DISCRETE_ACTIONS = {
     # brake right
     8: [-0.5, 0.5],
 }
-
-
-# timeout decorator
-def set_timeout(seconds):
-    def wrap(func):
-        def handle(signum, frame):  # 收到信号 SIGALRM 后的回调函数，第一个参数是信号的数字，第二个参数是the interrupted stack frame.
-            raise RuntimeError
-        def to_do(*args, **kwargs):
-            signal.signal(signal.SIGALRM, handle)  # 设置信号和回调函数
-            signal.alarm(seconds)  # 设置 timeout 秒的闹钟
-            # print('start alarm signal.')
-            r = func(*args, **kwargs)
-            # print('close alarm signal.')
-            signal.alarm(0)  # 关闭闹钟
-            return r
-        return to_do
-    return wrap
-
-
 
 live_carla_processes = set()  # Carla Server
 
@@ -417,6 +399,9 @@ class CarlaEnv(gym.Env):
         # ])
         obs = image
         self.last_obs = obs
+        base = MobileNetV2(include_top=False, input_shape=(96, 96, 3))
+        base.trainable = False
+        obs = base(obs)
         return obs
 
     def step(self, action):

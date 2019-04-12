@@ -154,4 +154,5 @@ REWARD_FUNC = 'custom3'
 USE_SENSOR = 'use_rgb'
 NUM_CHANNELS = 3
 SCENARIO = 'TOWN2_ONE_CURVE_0'
+PRETRAIN = True
 LOGDIR = '~/Data/planet/carla_debug'
