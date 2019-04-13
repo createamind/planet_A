@@ -473,10 +473,10 @@ class CollectGymDataset(object):
   def _get_episode(self):
     episode = {k: [t[k] for t in self._episode] for k in self._episode[0]}
     episode = {k: np.array(v) for k, v in episode.items()}
-    try:
-      episode["command"] = episode["command"][0]
-    except Exception as e:
-      print(e)
+   # try:
+   #   episode["command"] = episode["command"][0]
+   # except Exception as e:
+   #   print(e)
     for key, sequence in episode.items():
       if sequence.dtype == 'object':
         message = "Sequence '{}' is not numeric:\n{}"
