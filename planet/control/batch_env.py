@@ -96,6 +96,7 @@ class BatchEnv(object):
     # print('<<<<<<<<<<<<<<<<', infos, '<<<<<<<<<<<<<<')
     # info = tuple(infos["command"])
     info = infos[0]["command"]
+
     return observ, reward, done, info
 
   def reset(self, indices=None):

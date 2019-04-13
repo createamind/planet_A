@@ -124,27 +124,7 @@ DISCRETE_ACTIONS = {
     8: [-0.5, 0.5],
 }
 
-
-# timeout decorator
-def set_timeout(seconds):
-    def wrap(func):
-        def handle(signum, frame):  # 收到信号 SIGALRM 后的回调函数，第一个参数是信号的数字，第二个参数是the interrupted stack frame.
-            raise RuntimeError
-        def to_do(*args, **kwargs):
-            signal.signal(signal.SIGALRM, handle)  # 设置信号和回调函数
-            signal.alarm(seconds)  # 设置 timeout 秒的闹钟
-            # print('start alarm signal.')
-            r = func(*args, **kwargs)
-            # print('close alarm signal.')
-            signal.alarm(0)  # 关闭闹钟
-            return r
-        return to_do
-    return wrap
-
-
-
 live_carla_processes = set()  # Carla Server
-
 
 def cleanup():
     print("Killing live carla processes", live_carla_processes)
@@ -363,17 +343,16 @@ class CarlaEnv(gym.Env):
             camera_r.set_rotation(0.0, 0.0, 0.0)
             settings.add_sensor(camera_r)
 
-
         # Setup start and end positions
         scene = self.client.load_settings(settings)
         positions = scene.player_start_spots
         self.start_pos = positions[self.scenario["start_pos_id"]]
         self.end_pos = positions[self.scenario["end_pos_id"]]
         self.start_coord = [
-            self.start_pos.location.x // 100, self.start_pos.location.y // 100
+            self.start_pos.location.x, self.start_pos.location.y
         ]
         self.end_coord = [
-            self.end_pos.location.x // 100, self.end_pos.location.y // 100
+            self.end_pos.location.x, self.end_pos.location.y
         ]
         print("Start pos {} ({}), end {} ({})".format(
             self.scenario["start_pos_id"], self.start_coord,
@@ -396,7 +375,6 @@ class CarlaEnv(gym.Env):
             if z0 - z1 == 0:
                 cnt += 1
         print('Starting new episode done.\n')
-
 
         # Process observations: self._read_observation() returns image and py_measurements.
         image, py_measurements = self._read_observation()
@@ -650,7 +628,7 @@ class CarlaEnv(gym.Env):
             ], [self.end_pos.location.x, self.end_pos.location.y, GROUND_Z], [
                 self.end_pos.orientation.x, self.end_pos.orientation.y,
                 GROUND_Z
-            ]) / 100
+            ])
         else:
             distance_to_goal = -1
 
@@ -658,7 +636,7 @@ class CarlaEnv(gym.Env):
             np.linalg.norm([
                 cur.transform.location.x - self.end_pos.location.x,
                 cur.transform.location.y - self.end_pos.location.y
-            ]) / 100)
+            ]))
 
         py_measurements = {
             "episode_id": self.episode_id,
@@ -962,8 +940,8 @@ def print_measurements(measurements):
     message += "{other_lane:.0f}% other lane, {offroad:.0f}% off-road, "
     message += "({agents_num:d} non-player agents in the scene)"
     message = message.format(
-        pos_x=player_measurements.transform.location.x / 100,  # cm -> m
-        pos_y=player_measurements.transform.location.y / 100,
+        pos_x=player_measurements.transform.location.x,  # cm -> m
+        pos_y=player_measurements.transform.location.y,
         speed=player_measurements.forward_speed,
         col_cars=player_measurements.collision_vehicles,
         col_ped=player_measurements.collision_pedestrians,

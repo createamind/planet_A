@@ -155,5 +155,6 @@ USE_SENSOR = 'use_rgb'
 NUM_CHANNELS = 4
 ENCODE = True
 PLAN_BIAS = False
+PLAN_BOND = True
 SCENARIO = 'TOWN2_ONE_CURVE_0'
 LOGDIR = '~/Data/planet/carla_debug'
