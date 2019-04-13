@@ -26,10 +26,10 @@ from planet import IMG_SIZE, NUM_CHANNELS
 obs_size = IMG_SIZE
 num_channels_x = NUM_CHANNELS
 
-from keras.applications import VGG16, MobileNetV2
+# from keras.applications import VGG16, MobileNetV2
 # conv_base = MobileNetV2(include_top=False, input_shape=(96, 96, 3))
 # conv_base.trainable = False
-import tensornets as nets
+# import tensornets as nets
 
 def encoder(obs):
   """Extract deterministic features from an observation."""

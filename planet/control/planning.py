@@ -20,7 +20,7 @@ from tensorflow_probability import distributions as tfd
 import tensorflow as tf
 
 from planet.control import discounted_return
-from planet import tools
+from planet import tools, PLAN_BIAS, PLAN_BOND
 COMMAND_ORDINAL = {
     "REACH_GOAL": 0,
     "GO_STRAIGHT": 1,
@@ -68,6 +68,13 @@ def cross_entropy_method(
     bond_straight = tf.clip_by_value(bond_straight, -8, 8)
     bond_keep = tf.clip_by_value(bond_keep, -8, 8)
 
+    #def f1(): return bond_straight   # go straight bond
+
+    #def f2(): return bond_turn #+ 0.2 * bond_keep      # right turn bond
+
+    #def f3(): return -bond_turn #+ 0.2 * bond_keep     # left turn bond
+
+    #def f4(): return bond_keep       # lane keep bond
     def f1(): return bond_straight   # go straight bond
 
     def f2(): return bond_turn + 0.2 * bond_keep      # right turn bond
@@ -85,7 +92,8 @@ def cross_entropy_method(
     return_ = discounted_return.discounted_return(
         reward, length, discount)[:, 0]
     return_ = tf.reshape(return_, (original_batch, amount))
-    return_ += bond
+    if PLAN_BOND:
+        return_ += bond
     # Re-fit belief to the best ones.
     _, indices = tf.nn.top_k(return_, topk, sorted=False)
     indices += tf.range(original_batch)[:, None] * amount
@@ -102,14 +110,15 @@ def cross_entropy_method(
       return tf.expand_dims(tf.transpose(x), 0)
 
   def f2():
-      x = tf.concat([mean[:, :, 0]+0.2, mean[:, :, 1]+0.3], 0)
+      x = tf.concat([mean[:, :, 0]+0.2, mean[:, :, 1]+0.2], 0)
       return tf.expand_dims(tf.transpose(x), 0)
 
   def f3():
-      x = tf.concat([mean[:, :, 0]+0.2, mean[:, :, 1]-0.3], 0)
+      x = tf.concat([mean[:, :, 0]+0.2, mean[:, :, 1]-0.2], 0)
       return tf.expand_dims(tf.transpose(x), 0)
   command = tf.reshape(command, (1, -1))
-  mean = tf.case({tf.reduce_all(tf.equal(command, 2)): f2,
+  if PLAN_BIAS:
+      mean = tf.case({tf.reduce_all(tf.equal(command, 2)): f2,
                   tf.reduce_all(tf.equal(command, 3)): f3}, default=f1, exclusive=True)
 
   stddev = tf.ones((original_batch, horizon) + action_shape)

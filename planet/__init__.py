@@ -147,11 +147,13 @@ from __future__ import print_function
 
 TASK_NAME = "{tasks: [carla]}"
 IMG_SIZE = (96, 96)
-EPISODE_LEN = 600
+EPISODE_LEN = 150
 REPEATE = 1
 BATCHSIZE = 40
 REWARD_FUNC = 'custom3'
 USE_SENSOR = 'use_rgb'
-NUM_CHANNELS = 3
+NUM_CHANNELS = 4
+ENCODE = True
+PLAN_BIAS = False
 SCENARIO = 'TOWN2_ONE_CURVE_0'
 LOGDIR = '~/Data/planet/carla_debug'

@@ -475,7 +475,9 @@ class CollectGymDataset(object):
     for key, sequence in episode.items():
       if sequence.dtype == 'object':
         message = "Sequence '{}' is not numeric:\n{}"
-        raise RuntimeError(message.format(key, sequence))
+        print("something wrong\n"*3, message.format(key, sequence))
+        episode[key] = sequence[0]
+        # raise RuntimeError(message.format(key, sequence))
     return episode
 
   def _write(self, episode, filename):

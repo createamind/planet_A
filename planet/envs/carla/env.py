@@ -25,7 +25,7 @@ except Exception:
 import gym
 from gym.spaces import Box, Discrete, Tuple
 
-from planet import REWARD_FUNC, IMG_SIZE,  USE_SENSOR, SCENARIO
+from planet import REWARD_FUNC, NUM_CHANNELS, IMG_SIZE,  USE_SENSOR, SCENARIO, ENCODE
 
 exec('from .scenarios import ' + SCENARIO + ' as SCENARIO')
 
@@ -39,14 +39,14 @@ if CARLA_OUT_PATH and not os.path.exists(CARLA_OUT_PATH):
 
 # Set this to the path of your Carla binary
 SERVER_BINARY = os.environ.get("CARLA_SERVER",
-                               os.path.expanduser("/data/carla8/CarlaUE4.sh"))     # the carla8 engine
+                               os.path.expanduser("/home/gu/Downloads/carla8/CarlaUE4.sh"))     # the carla8 engine
 
-assert os.path.exists(SERVER_BINARY)
+# assert os.path.exists(SERVER_BINARY)
 if "CARLA_PY_PATH" in os.environ:
     sys.path.append(os.path.expanduser(os.environ["CARLA_PY_PATH"]))
 else:
     # TODO(ekl) switch this to the binary path once the planner is in master
-    sys.path.append(os.path.expanduser("/data/carla8/PythonClient/"))             # the carla8 python API
+    sys.path.append(os.path.expanduser("/home/gu/Downloads/carla8/PythonClient/"))             # the carla8 python API
 
 try:
     from carla.client import CarlaClient, VehicleControl
@@ -188,7 +188,7 @@ class CarlaEnv(gym.Env):
                 0,
                 255,
                 shape=(config["y_res"], config["x_res"],
-                       3 * config["framestack"]),
+                       NUM_CHANNELS),
                 dtype=np.uint8)
         elif config["use_sensor"] == 'use_2rgb':
             image_space = Box(
@@ -411,6 +411,8 @@ class CarlaEnv(gym.Env):
             prev_image = image
         if self.config["framestack"] == 2:
             image = np.concatenate([prev_image, image], axis=2)
+        if ENCODE:
+            image = np.concatenate([image, COMMAND_ORDINAL[py_measurements["next_command"]]*50*np.ones(list(image.shape[:2])+[1])], axis=2)
         # obs = (image, COMMAND_ORDINAL[py_measurements["next_command"]], [
         #     py_measurements["forward_speed"],
         #     py_measurements["distance_to_goal"]
@@ -511,10 +513,12 @@ class CarlaEnv(gym.Env):
                 self.measurements_file = None
                 if self.config["convert_images_to_video"]:
                     self.images_to_video()
-
+        
         self.num_steps += 1
         image = self.preprocess_image(image)
         info = np.array(COMMAND_ORDINAL[py_measurements["next_command"]], np.float32).astype(np.float32)
+        
+        # print(self.encode_obs(image, py_measurements)[0].shape)
         return (self.encode_obs(image, py_measurements), reward, done, info)
 
     def images_to_video(self):
@@ -986,7 +990,7 @@ if __name__ == "__main__":
     for _ in range(2):
         env = CarlaEnv()
         obs = env.reset()
-        print("reset", obs)
+        print("reset", obs[0].shape)
         start = time.time()
         done = False
         i = 0
