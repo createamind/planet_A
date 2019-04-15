@@ -408,7 +408,7 @@ class CarlaEnv(gym.Env):
             print("Error during step, terminating episode early",
                   traceback.format_exc())
             self.clear_server_state()
-            return (self.last_obs, 0.0, True, {})
+            return (self.last_obs, 0.0, True, np.array(1, np.float32).astype(np.float32))
 
 
     # image, py_measurements = self._read_observation()  --->  self.preprocess_image(image)   --->  step observation output
@@ -829,14 +829,14 @@ def compute_reward_custom2(env, prev, current):
 def compute_reward_custom3(env, prev, current):
     reward = 0.0
 
-    # cur_dist = current["distance_to_goal"]
-    # prev_dist = prev["distance_to_goal"]
+    cur_dist = current["distance_to_goal"]
+    prev_dist = prev["distance_to_goal"]
     #
     # if env.config["verbose"]:
     #     print("Cur dist {}, prev dist {}".format(cur_dist, prev_dist))
     #
     # # Distance travelled toward the goal in m
-    # reward += 0.5 * np.clip(prev_dist - cur_dist, -12.0, 12.0)
+    reward += np.clip(prev_dist - cur_dist, -10.0, 10.0)
 
     # Speed reward, up 30.0 (km/h)
     # reward += current["forward_speed"]*3.6/ 10.0  # 3.6km/h = 1m/s

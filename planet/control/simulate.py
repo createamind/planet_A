@@ -53,8 +53,8 @@ def simulate(step, env_ctor, duration, num_agents, agent_config,
 def collect_rollouts(step, env_ctor, duration, num_agents, agent_config, env_processes):
 
   batch_env = define_batch_env(env_ctor, num_agents, env_processes)
-  command = batch_env.command
-  agent = mpc_agent.MPCAgent(batch_env, step, False, False, agent_config, command)
+  # command = batch_env._info
+  agent = mpc_agent.MPCAgent(batch_env, step, False, False, agent_config)# , command)
 
   def simulate_fn(unused_last, step):
     done, score, unused_summary = simulate_step(

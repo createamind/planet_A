@@ -64,27 +64,18 @@ def cross_entropy_method(
     bond_turn = tf.clip_by_value(bond_turn, -10, 10)
     bond_keep = tf.reshape(tf.reduce_sum(action[:, :, 0], axis=1), [1, 1000])
     bond_straight = tf.reshape(tf.reduce_sum(action[:, :, 0], axis=1), [1, 1000]) - \
-                    tf.abs(tf.reshape(tf.reduce_sum(action[:, :, 1], axis=1), [1, 1000]))
+                    0.2*tf.reshape(tf.reduce_sum(tf.abs(action[:, :, 1]), axis=1), [1, 1000])
     bond_straight = tf.clip_by_value(bond_straight, -8, 8)
     bond_keep = tf.clip_by_value(bond_keep, -8, 8)
 
-    #def f1(): return bond_straight   # go straight bond
-
-    #def f2(): return bond_turn #+ 0.2 * bond_keep      # right turn bond
-
-    #def f3(): return -bond_turn #+ 0.2 * bond_keep     # left turn bond
-
-    #def f4(): return bond_keep       # lane keep bond
-    def f1(): return bond_straight   # go straight bond
+    def f1(): return bond_straight                    # go straight bond
 
     def f2(): return bond_turn + 0.2 * bond_keep      # right turn bond
 
     def f3(): return -bond_turn + 0.2 * bond_keep     # left turn bond
 
-    def f4(): return bond_keep       # lane keep bond
+    def f4(): return bond_keep                        # lane keep bond
 
-    # bond = tf.case({tf.reduce_all(tf.equal(command, 2)): f1,
-    #                 tf.reduce_all(tf.equal(command, 3)): f2}, default=f3, exclusive=True)
     bond = tf.case({tf.reduce_all(tf.equal(command, 2)): f2,
                     tf.reduce_all(tf.equal(command, 3)): f3,
                     tf.reduce_all(tf.equal(command, 4)): f4}, default=f1, exclusive=True)
@@ -93,7 +84,7 @@ def cross_entropy_method(
         reward, length, discount)[:, 0]
     return_ = tf.reshape(return_, (original_batch, amount))
     if PLAN_BOND:
-        return_ += bond
+        return_ += bond*0.2
     # Re-fit belief to the best ones.
     _, indices = tf.nn.top_k(return_, topk, sorted=False)
     indices += tf.range(original_batch)[:, None] * amount
@@ -110,11 +101,11 @@ def cross_entropy_method(
       return tf.expand_dims(tf.transpose(x), 0)
 
   def f2():
-      x = tf.concat([mean[:, :, 0]+0.2, mean[:, :, 1]+0.2], 0)
+      x = tf.concat([mean[:, :, 0]+0.3, mean[:, :, 1]+0.3], 0)
       return tf.expand_dims(tf.transpose(x), 0)
 
   def f3():
-      x = tf.concat([mean[:, :, 0]+0.2, mean[:, :, 1]-0.2], 0)
+      x = tf.concat([mean[:, :, 0]+0.3, mean[:, :, 1]-0.3], 0)
       return tf.expand_dims(tf.transpose(x), 0)
   command = tf.reshape(command, (1, -1))
   if PLAN_BIAS:
@@ -124,6 +115,6 @@ def cross_entropy_method(
   stddev = tf.ones((original_batch, horizon) + action_shape)
 
   mean, stddev, command = tf.scan(
-      iteration, tf.range(iterations), (mean, stddev, command * tf.ones([1, 12, 2], dtype=tf.int32)), back_prop=False)
+      iteration, tf.range(iterations), (mean, stddev, command * tf.ones([1, 12, 2], dtype=tf.float32)), back_prop=False)
   mean, stddev = mean[-1], stddev[-1]  # Select belief at last iterations.
   return mean
