@@ -41,7 +41,7 @@ def image_strip_summary(name, images, max_length=100, max_batch=10):
 
   num_channels_x = NUM_CHANNELS
   if num_channels_x > 3:
-    images = images[...,:3]
+    images = images[..., :3]
     num_channels_x = 3
 
   if images.dtype == tf.uint8:
