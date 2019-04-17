@@ -96,7 +96,11 @@ class BatchEnv(object):
     # print('<<<<<<<<<<<<<<<<', infos, '<<<<<<<<<<<<<<')
     # info = tuple(infos["command"])
     info = infos[0]["command"]
-    print(info)
+#<<<<<<< HEAD
+#    print(info)
+#=======
+    # if not isinstance(info, np.ndarray):
+#>>>>>>> b5afb07a030eb5a34a3039a6c856f01cdd5b5a4a
     return observ, reward, done, info
 
   def reset(self, indices=None):
