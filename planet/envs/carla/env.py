@@ -25,7 +25,7 @@ except Exception:
 import gym
 from gym.spaces import Box, Discrete, Tuple
 
-from planet import REWARD_FUNC, IMG_SIZE,  USE_SENSOR, SCENARIO, NUM_CHANNELS
+from planet import REWARD_FUNC, IMG_SIZE,  USE_SENSOR, SCENARIO, NUM_CHANNELS, ENCODE
 
 exec('from .scenarios import '+ SCENARIO + ' as SCENARIO')
 
@@ -206,6 +206,7 @@ class CarlaEnv(gym.Env):
         self.start_coord = None
         self.end_coord = None
         self.last_obs = None
+        self.action = None
 
     def init_server(self):
         print("Initializing new Carla server...")
@@ -392,6 +393,9 @@ class CarlaEnv(gym.Env):
         #     py_measurements["forward_speed"],
         #     py_measurements["distance_to_goal"]
         # ])
+        if ENCODE:
+            image = np.concatenate([image, py_measurements["next_command_id"]*50 + np.zeros(list(image.shape[:2])+[1])], axis=2)
+
         obs = image
         self.last_obs = obs
         return obs
@@ -426,6 +430,7 @@ class CarlaEnv(gym.Env):
         # reverse and hand_brake are disabled.
         reverse = False
         hand_brake = False
+        self.action = action
 
         if self.config["verbose"]:
             print("steer", steer, "throttle", throttle, "brake", brake,
@@ -585,19 +590,19 @@ class CarlaEnv(gym.Env):
         if self.config["use_sensor"] == 'use_semantic':
             camera_name = "CameraSemantic"
 
-        elif self.config["use_sensor"] in ['use_depth','use_logdepth']:
+        elif self.config["use_sensor"] in ['use_depth', 'use_logdepth']:
             camera_name = "CameraDepth"
 
         elif self.config["use_sensor"] == 'use_rgb':
             camera_name = "CameraRGB"
 
         elif self.config["use_sensor"] == 'use_2rgb':
-            camera_name = ["CameraRGB_L","CameraRGB_R"]
+            camera_name = ["CameraRGB_L", "CameraRGB_R"]
 
         # for name, image in sensor_data.items():
         #     if name == camera_name:
         #         observation = image
-        if camera_name == ["CameraRGB_L","CameraRGB_R"]:
+        if camera_name == ["CameraRGB_L", "CameraRGB_R"]:
             observation = [sensor_data["CameraRGB_L"], sensor_data["CameraRGB_R"]]
         else:
             observation = sensor_data[camera_name]
@@ -822,10 +827,7 @@ def compute_reward_custom2(env, prev, current):
     # print(current["intersection_offroad"])
     # Opposite lane intersection
     reward -= 4 * current["intersection_otherlane"]  # [0 ~ 1]
-
-
     return reward
-
 
 
 def compute_reward_custom3(env, prev, current):
@@ -859,8 +861,53 @@ def compute_reward_custom3(env, prev, current):
     # print(current["intersection_offroad"])
     # Opposite lane intersection
     reward -= 2 * (current["forward_speed"]+1.0) * current["intersection_otherlane"]  # [0 ~ 1]
+    return reward
+COMMAND_ORDINAL = {
+    "REACH_GOAL": 0,
+    "GO_STRAIGHT": 1,
+    "TURN_RIGHT": 2,
+    "TURN_LEFT": 3,
+    "LANE_FOLLOW": 4,
+}
+
+def compute_reward_custom4(env, prev, current):
+    reward = 0.0
+
+    cur_dist = current["distance_to_goal"]
+    prev_dist = prev["distance_to_goal"]
+    if current["next_command"] == "TURN_RIGHT":
+        bond = env.action[1]
+    elif current["next_command"] == "TURN_LEFT":
+        bond = -env.action[1]
+    # if env.config["verbose"]:
+    #     print("Cur dist {}, prev dist {}".format(cur_dist, prev_dist))
+    #
+    # # Distance travelled toward the goal in m
+    reward += np.clip(prev_dist - cur_dist, -12.0, 12.0)
+
+    # Speed reward, up 30.0 (km/h)
+    # reward += current["forward_speed"]*3.6/ 10.0  # 3.6km/h = 1m/s
+    # reward += np.clip(current["forward_speed"]*3.6, 0.0, 30.0) / 10  # 3.6km/h = 1m/s
+    reward += np.where(current["forward_speed"]*3.6 < 30.0, current["forward_speed"]*3.6/10, -0.3*current["forward_speed"]*3.6+12.0)
+    reward += bond
+    # New collision damage
+    new_damage = (
+        current["collision_vehicles"] + current["collision_pedestrians"] +
+        current["collision_other"] - prev["collision_vehicles"] -
+        prev["collision_pedestrians"] - prev["collision_other"])
+    # print(current["collision_other"], current["collision_vehicles"], current["collision_pedestrians"])
+    # 0.0 41168.109375 0.0
+    if new_damage:
+        reward -= 300.0
+
+    # Sidewalk intersection [0, 1]
+    reward -= 5 * (current["forward_speed"]+1.0) * current["intersection_offroad"]
+    # print(current["intersection_offroad"])
+    # Opposite lane intersection
+    reward -= 2 * (current["forward_speed"]+1.0) * current["intersection_otherlane"]  # [0 ~ 1]
 
     return reward
+
 
 def compute_reward_custom_depth(env, prev, current):
     reward = 0.0

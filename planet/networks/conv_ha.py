@@ -22,7 +22,7 @@ from tensorflow_probability import distributions as tfd
 
 from planet import tools
 
-from planet import IMG_SIZE, NUM_CHANNELS
+from planet import IMG_SIZE, NUM_CHANNELS, ENCODE
 obs_size = IMG_SIZE
 num_channels_x = NUM_CHANNELS
 
@@ -52,11 +52,22 @@ def encoder(obs):
     hidden = tf.layers.conv2d(hidden, 256, 4, **kwargs2)
 
   elif obs_size == (96, 96):
-    hidden = tf.layers.conv2d(hidden, 32, 8, **kwargs)
-    hidden = tf.layers.conv2d(hidden, 64, 5, **kwargs)
-    hidden = tf.layers.conv2d(hidden, 72, 5, **kwargs)
-    hidden = tf.layers.conv2d(hidden, 128, 5, **kwargs)
-    hidden = tf.layers.conv2d(hidden, 1024, 3, **kwargs1)
+    if ENCODE:
+      hidden_image = hidden[:, :, :, :NUM_CHANNELS-1]
+      hidden_command = hidden[:, :, :, -1]
+      hidden = tf.layers.conv2d(hidden_image, 32, 8, **kwargs)
+      hidden = tf.layers.conv2d(hidden, 64, 5, **kwargs)
+      hidden = tf.layers.conv2d(hidden, 72, 5, **kwargs)
+      l = hidden.shape.as_list()[2]
+      hidden = tf.concat([tf.expand_dims(hidden_command[:, :l, :l], -1), hidden], -1)
+      hidden = tf.layers.conv2d(hidden, 128, 5, **kwargs)
+      hidden = tf.layers.conv2d(hidden, 1024, 3, **kwargs1)
+    else:
+      hidden = tf.layers.conv2d(hidden, 32, 8, **kwargs)
+      hidden = tf.layers.conv2d(hidden, 64, 5, **kwargs)
+      hidden = tf.layers.conv2d(hidden, 72, 5, **kwargs)
+      hidden = tf.layers.conv2d(hidden, 128, 5, **kwargs)
+      hidden = tf.layers.conv2d(hidden, 1024, 3, **kwargs1)
 
   elif obs_size == (128, 128):
     hidden = tf.layers.conv2d(hidden, 32, 4, **kwargs2)
