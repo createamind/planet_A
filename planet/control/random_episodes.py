@@ -29,7 +29,8 @@ def random_episodes(env_ctor, num_episodes, output_dir=None):
     obs = env.reset()
     # cnt = 0
     while not done:
-      action = policy(env, obs)
+      # action = policy(env, obs)
+      action = (0.6, 0)
       obs, _, done, info = env.step(action)  # env.step
     #   cnt += 1
     # print(cnt)

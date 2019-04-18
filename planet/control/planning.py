@@ -143,7 +143,8 @@ def cross_entropy_method(
         reward, length, discount)[:, 0]
     return_ = tf.reshape(return_, (original_batch, amount))
     if PLAN_BOND:
-        return_ += bond*0.2
+        # return_ += bond*0.2
+        return_ += bond * 0.0
     # Re-fit belief to the best ones.
     _, indices = tf.nn.top_k(return_, topk, sorted=False)
     indices += tf.range(original_batch)[:, None] * amount
