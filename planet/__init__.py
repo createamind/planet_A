@@ -224,6 +224,7 @@ REWARD_FUNC = 'custom3'
 USE_SENSOR = 'use_rgb'
 NUM_CHANNELS = 3
 ENCODE = False
+ENCODE_ALL = False
 NUM_CHANNELS += 1 if ENCODE else 0
 PLAN_BIAS = True
 PLAN_BOND = True

@@ -22,7 +22,7 @@ from tensorflow_probability import distributions as tfd
 
 from planet import tools
 
-from planet import IMG_SIZE, NUM_CHANNELS, ENCODE
+from planet import IMG_SIZE, NUM_CHANNELS, ENCODE, ENCODE_ALL
 obs_size = IMG_SIZE
 num_channels_x = NUM_CHANNELS
 
@@ -53,13 +53,17 @@ def encoder(obs):
 
   elif obs_size == (96, 96):
     if ENCODE:
-      hidden_image = hidden[:, :, :, :NUM_CHANNELS-1]
-      hidden_command = hidden[:, :, :, -1]
+      if not ENCODE_ALL:
+        hidden_image = hidden[:, :, :, :NUM_CHANNELS-1]
+        hidden_command = hidden[:, :, :, -1]
+      else:
+        hidden_image = hidden
       hidden = tf.layers.conv2d(hidden_image, 32, 8, **kwargs)
       hidden = tf.layers.conv2d(hidden, 64, 5, **kwargs)
       hidden = tf.layers.conv2d(hidden, 72, 5, **kwargs)
-      l = hidden.shape.as_list()[2]
-      hidden = tf.concat([tf.expand_dims(hidden_command[:, :l, :l], -1), hidden], -1)
+      if not ENCODE_ALL:
+        l = hidden.shape.as_list()[2]
+        hidden = tf.concat([tf.expand_dims(hidden_command[:, :l, :l], -1), hidden], -1)
       hidden = tf.layers.conv2d(hidden, 128, 5, **kwargs)
       hidden = tf.layers.conv2d(hidden, 1024, 3, **kwargs1)
     else:

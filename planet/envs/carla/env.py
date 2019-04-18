@@ -862,13 +862,6 @@ def compute_reward_custom3(env, prev, current):
     # Opposite lane intersection
     reward -= 2 * (current["forward_speed"]+1.0) * current["intersection_otherlane"]  # [0 ~ 1]
     return reward
-COMMAND_ORDINAL = {
-    "REACH_GOAL": 0,
-    "GO_STRAIGHT": 1,
-    "TURN_RIGHT": 2,
-    "TURN_LEFT": 3,
-    "LANE_FOLLOW": 4,
-}
 
 def compute_reward_custom4(env, prev, current):
     reward = 0.0
