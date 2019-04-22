@@ -408,7 +408,7 @@ class CarlaEnv(gym.Env):
             print("Error during step, terminating episode early",
                   traceback.format_exc())
             self.clear_server_state()
-            return (self.last_obs, 0.0, True, self.prev_measurement)
+            return (self.last_obs, range(7), True, self.prev_measurement)
 
 
     # image, py_measurements = self._read_observation()  --->  self.preprocess_image(image)   --->  step observation output
@@ -465,7 +465,7 @@ class CarlaEnv(gym.Env):
         }
 
         # compute reward
-        reward = compute_reward(self, self.prev_measurement, py_measurements)
+        reward, new_damage = compute_reward(self, self.prev_measurement, py_measurements)
 
         self.total_reward += reward
         py_measurements["reward"] = reward
@@ -498,7 +498,14 @@ class CarlaEnv(gym.Env):
 
         self.num_steps += 1
         image = self.preprocess_image(image)
-        return (self.encode_obs(image, py_measurements), reward, done,
+        reward_collection = ([reward,
+                              new_damage,
+                              py_measurements["x_orient"],
+                              py_measurements["y_orient"],
+                              py_measurements["forward_speed"],
+                              py_measurements["intersection_offroad"],
+                              py_measurements["intersection_otherlane"]])
+        return (self.encode_obs(image, py_measurements), reward_collection, done,
                 py_measurements)
 
     def images_to_video(self):
@@ -634,7 +641,7 @@ class CarlaEnv(gym.Env):
             ], [self.end_pos.location.x, self.end_pos.location.y, GROUND_Z], [
                 self.end_pos.orientation.x, self.end_pos.orientation.y,
                 GROUND_Z
-            ]) / 100
+            ])
         else:
             distance_to_goal = -1
 
@@ -642,7 +649,7 @@ class CarlaEnv(gym.Env):
             np.linalg.norm([
                 cur.transform.location.x - self.end_pos.location.x,
                 cur.transform.location.y - self.end_pos.location.y
-            ]) / 100)
+            ]))
 
         py_measurements = {
             "episode_id": self.episode_id,
@@ -901,6 +908,45 @@ def compute_reward_custom4(env, prev, current):
 
     return reward
 
+def compute_reward_custom5(env, prev, current):
+    reward = 0.0
+
+    cur_dist = current["distance_to_goal"]
+    prev_dist = prev["distance_to_goal"]
+    if current["next_command"] == "TURN_RIGHT":
+        bond = env.action[1]
+    elif current["next_command"] == "TURN_LEFT":
+        bond = -env.action[1]
+    else:
+        bond = env.action[0]
+    # if env.config["verbose"]:
+    #     print("Cur dist {}, prev dist {}".format(cur_dist, prev_dist))
+    #
+    # # Distance travelled toward the goal in m
+    reward += np.clip(prev_dist - cur_dist, -12.0, 12.0)
+
+    # Speed reward, up 30.0 (km/h)
+    # reward += current["forward_speed"]*3.6/ 10.0  # 3.6km/h = 1m/s
+    # reward += np.clip(current["forward_speed"]*3.6, 0.0, 30.0) / 10  # 3.6km/h = 1m/s
+    reward += np.where(current["forward_speed"]*3.6 < 30.0, current["forward_speed"]*3.6/10, -0.3*current["forward_speed"]*3.6+12.0)
+    reward += bond
+    # New collision damage
+    new_damage = (
+        current["collision_vehicles"] + current["collision_pedestrians"] +
+        current["collision_other"] - prev["collision_vehicles"] -
+        prev["collision_pedestrians"] - prev["collision_other"])
+    # print(current["collision_other"], current["collision_vehicles"], current["collision_pedestrians"])
+    # 0.0 41168.109375 0.0
+    if new_damage:
+        reward -= 300.0
+
+    # Sidewalk intersection [0, 1]
+    reward -= 5 * (current["forward_speed"]+1.0) * current["intersection_offroad"]
+    # print(current["intersection_offroad"])
+    # Opposite lane intersection
+    reward -= 2 * (current["forward_speed"]+1.0) * current["intersection_otherlane"]  # [0 ~ 1]
+
+    return reward, new_damage
 
 def compute_reward_custom_depth(env, prev, current):
     reward = 0.0
@@ -963,6 +1009,8 @@ REWARD_FUNCTIONS = {
     "custom1": compute_reward_custom1,
     "custom2": compute_reward_custom2,
     "custom3": compute_reward_custom3,
+    "custom4": compute_reward_custom4,
+    "custom5": compute_reward_custom5,
     "custom_depth": compute_reward_custom_depth,
     "lane_keep": compute_reward_lane_keep,
 }
@@ -980,8 +1028,8 @@ def print_measurements(measurements):
     message += "{other_lane:.0f}% other lane, {offroad:.0f}% off-road, "
     message += "({agents_num:d} non-player agents in the scene)"
     message = message.format(
-        pos_x=player_measurements.transform.location.x / 100,  # cm -> m
-        pos_y=player_measurements.transform.location.y / 100,
+        pos_x=player_measurements.transform.location.x,  # cm -> m
+        pos_y=player_measurements.transform.location.y,
         speed=player_measurements.forward_speed,
         col_cars=player_measurements.collision_vehicles,
         col_ped=player_measurements.collision_pedestrians,

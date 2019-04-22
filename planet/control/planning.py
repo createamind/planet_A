@@ -140,7 +140,7 @@ def cross_entropy_method(
                     tf.reduce_all(tf.equal(command, 4)): f4}, default=f1, exclusive=True)
 
     return_ = discounted_return.discounted_return(
-        reward, length, discount)[:, 0]
+        reward[:,:,0], length, discount)[:, 0]
     return_ = tf.reshape(return_, (original_batch, amount))
     if PLAN_BOND:
         # return_ += bond*0.2

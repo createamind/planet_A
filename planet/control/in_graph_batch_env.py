@@ -51,7 +51,7 @@ class InGraphBatchEnv(object):
           'action', batch_dims + action_shape, action_dtype,
           tf.constant_initializer(0), trainable=False)
       self._reward = tf.get_variable(
-          'reward', batch_dims, tf.float32,
+          'reward', batch_dims + (7,), tf.float32,
           tf.constant_initializer(0), trainable=False)
       # This variable should be boolean, but tf.scatter_update() does not
       # support boolean resource variables yet.
@@ -123,7 +123,7 @@ class InGraphBatchEnv(object):
     done = tf.zeros_like(indices, tf.int32)
     with tf.control_dependencies([
         tf.scatter_update(self._observ, indices, observ),
-        tf.scatter_update(self._reward, indices, reward),
+        # tf.scatter_update(self._reward, indices, reward),
         tf.scatter_update(self._done, indices, tf.to_int32(done))]):
       return tf.identity(observ)
 

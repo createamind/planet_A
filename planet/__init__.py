@@ -176,7 +176,7 @@ from __future__ import print_function
 #
 # TASK_NAME = "{tasks: [carla]}"
 # IMG_SIZE = (64, 64)
-# H_SIZE, S_SIZE = 200, 30
+# H_SIZE, S_SIZE = 200new_damage, 30
 # EPISODE_LEN, COLLECT_EPISODE = 400, 300000.0
 # REPEATE, NUM_SEED = 1, 5
 # BATCHSIZE, CHUNK_LEN = 50, 50
@@ -216,11 +216,11 @@ from __future__ import print_function
 
 TASK_NAME = "{tasks: [carla]}"
 H_SIZE, S_SIZE = 400, 60
-EPISODE_LEN, COLLECT_EPISODE = 200, 30000.0
+EPISODE_LEN, COLLECT_EPISODE = 60, 30000.0
 REPEATE, NUM_SEED = 1, 5
 BATCHSIZE, CHUNK_LEN = 40, 50
 IMG_SIZE = (64, 64)
-REWARD_FUNC = 'custom3'
+REWARD_FUNC = 'custom5'
 USE_SENSOR = 'use_rgb'
 NUM_CHANNELS = 3
 ENCODE = False

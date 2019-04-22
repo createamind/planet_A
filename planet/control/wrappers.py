@@ -212,11 +212,16 @@ class ActionRepeat(object):
     done = False
     total_reward = 0
     current_step = 0
+    total_demage = 0
     while current_step < self._amount and not done:
       observ, reward, done, info = self._env.step(action)
-      total_reward += reward
+      # here reward is a list with 7 elements
+      total_reward += reward[0]
+      total_demage += reward[1]
       current_step += 1
-    return observ, total_reward, done, info
+    reward[0] = total_reward
+    reward[1] = total_demage
+    return observ, reward, done, info
 
 
 class DeepMindWrapper(object):
@@ -432,7 +437,7 @@ class CollectGymDataset(object):
     else:
       episode = self._get_episode()
       info['episode'] = episode
-      acc_reward = sum(episode['reward'])
+      acc_reward = sum(episode['reward'][0])
       if self.step_error:
         print('step error... this episode will NOT be saved.')
 

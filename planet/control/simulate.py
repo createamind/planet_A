@@ -72,7 +72,7 @@ def collect_rollouts(
       tf.zeros([num_agents], tf.float32),
       0 * batch_env.observ,
       0 * batch_env.action,
-      tf.zeros([num_agents], tf.float32))
+      tf.zeros([num_agents, 7], tf.float32))
   done, score, image, action, reward = tf.scan(
       simulate_fn, tf.range(duration),
       initializer, parallel_iterations=1)
@@ -157,7 +157,7 @@ def simulate_step(batch_env, algo, log=True, reset=False):
     action, step_summary = algo.perform(agent_indices, prevob)                 # get action from the planner.
     action.set_shape(batch_env.action.shape)
     with tf.control_dependencies([batch_env.step(action)]):                    # interact with the env.
-      add_score = score_var.assign_add(batch_env.reward)
+      add_score = score_var.assign_add(batch_env.reward[:, 0])
       inc_length = length_var.assign_add(tf.ones(len(batch_env), tf.int32))
     with tf.control_dependencies([add_score, inc_length]):
       agent_indices = tf.range(len(batch_env))
