@@ -25,9 +25,9 @@ except Exception:
 import gym
 from gym.spaces import Box, Discrete, Tuple
 
-from planet import REWARD_FUNC, IMG_SIZE,  USE_SENSOR, SCENARIO, NUM_CHANNELS, ENCODE
+from planet import REWARD_FUNC, IMG_SIZE,  USE_SENSOR, SCENARIO, NUM_CHANNELS, ENCODE, NUM_REWARD
 
-exec('from .scenarios import '+ SCENARIO + ' as SCENARIO')
+exec('from scenarios import '+ SCENARIO + ' as SCENARIO')
 
 # from .scenarios import TOWN2_NPC, TOWN2_WEATHER, TOWN2_WEATHER_NPC,\
 #     LANE_KEEP, TOWN2_ALL, TOWN2_ONE_CURVE, TOWN2_ONE_CURVE_0, TOWN2_ONE_CURVE_STRAIGHT_NAV,TOWN2_STRAIGHT_DYNAMIC_0, TOWN2_STRAIGHT_0
@@ -215,7 +215,7 @@ class CarlaEnv(gym.Env):
         self.server_process = subprocess.Popen(
             [
                 SERVER_BINARY, self.config["server_map"], "-windowed",
-                "-ResX=480", "-ResY=360", "-carla-server", "-benchmark -fps=10",   # "-benchmark -fps=10": to run the simulation at a fixed time-step of 0.1 seconds
+                "-ResX=900", "-ResY=520", "-carla-server", "-benchmark -fps=10",   # "-benchmark -fps=10": to run the simulation at a fixed time-step of 0.1 seconds
                 "-carla-world-port={}".format(self.server_port)
             ],
             preexec_fn=os.setsid,
@@ -408,7 +408,7 @@ class CarlaEnv(gym.Env):
             print("Error during step, terminating episode early",
                   traceback.format_exc())
             self.clear_server_state()
-            return (self.last_obs, range(7), True, self.prev_measurement)
+            return (self.last_obs, list(range(NUM_REWARD)), True, self.prev_measurement)
 
 
     # image, py_measurements = self._read_observation()  --->  self.preprocess_image(image)   --->  step observation output
@@ -434,7 +434,7 @@ class CarlaEnv(gym.Env):
 
         if self.config["verbose"]:
             print("steer", steer, "throttle", throttle, "brake", brake,
-                  "reverse", reverse)
+                             "reverse", reverse)
 
         if self.enable_autopilot:
             self.client.send_control(self.autopilot)
@@ -499,12 +499,13 @@ class CarlaEnv(gym.Env):
         self.num_steps += 1
         image = self.preprocess_image(image)
         reward_collection = ([reward,
-                              new_damage,
-                              py_measurements["x_orient"],
-                              py_measurements["y_orient"],
-                              py_measurements["forward_speed"],
-                              py_measurements["intersection_offroad"],
-                              py_measurements["intersection_otherlane"]])
+                              # new_damage,
+                              np.arctan(py_measurements["y_orient"]/(1e-6+py_measurements["x_orient"]))])
+                              # 1,
+                              # py_measurements["distance_to_goal"]/100,
+                              # py_measurements["forward_speed"],
+                              # py_measurements["intersection_offroad"],
+                              # py_measurements["intersection_otherlane"]])
         return (self.encode_obs(image, py_measurements), reward_collection, done,
                 py_measurements)
 
@@ -1080,8 +1081,8 @@ if __name__ == "__main__":
             # fixed command.
             obs, reward, done, info = env.step([0.5, 0.0])
 
-        total_reward += reward
-        print(i, "reward", reward, "total", total_reward, "done", done)
+        # total_reward += reward
+        # print(i, "reward", reward, "total", total_reward, "done", done)
 
         if i > 10000:
             env.reset()

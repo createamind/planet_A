@@ -20,7 +20,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from planet import tools
+from planet import tools, NUM_REWARD
 from planet.control import batch_env
 from planet.control import in_graph_batch_env
 from planet.control import mpc_agent
@@ -72,7 +72,7 @@ def collect_rollouts(
       tf.zeros([num_agents], tf.float32),
       0 * batch_env.observ,
       0 * batch_env.action,
-      tf.zeros([num_agents, 7], tf.float32))
+      tf.zeros([num_agents, NUM_REWARD], tf.float32))
   done, score, image, action, reward = tf.scan(
       simulate_fn, tf.range(duration),
       initializer, parallel_iterations=1)

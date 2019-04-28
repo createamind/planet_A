@@ -20,7 +20,7 @@ from tensorflow_probability import distributions as tfd
 import tensorflow as tf
 
 from planet.control import discounted_return
-from planet import tools, PLAN_BOND, PLAN_BIAS
+from planet import tools, PLAN_BOND, PLAN_BIAS, NUM_REWARD
 
 
 # def cross_entropy_method(
@@ -101,8 +101,10 @@ def cross_entropy_method(
 
 
   command = info_cmd
+  topk_ = topk
   def iteration(mean_and_stddev, _):
-    mean, stddev, command = mean_and_stddev
+
+    mean, stddev, command, topk_ = mean_and_stddev
     # mean 1 12 2
     # stddev 1 12 2
     # Sample action proposals from belief.
@@ -138,20 +140,35 @@ def cross_entropy_method(
     bond = tf.case({tf.reduce_all(tf.equal(command, 2)): f2,
                     tf.reduce_all(tf.equal(command, 3)): f3,
                     tf.reduce_all(tf.equal(command, 4)): f4}, default=f1, exclusive=True)
+    # reward_collection = ([reward,
+    #                       new_damage,
+    #                       py_measurements["x_orient"],
+    #                       py_measurements["y_orient"],
+    #                       py_measurements["forward_speed"],
+    #                       py_measurements["intersection_offroad"],
+    #                       py_measurements["intersection_otherlane"]])
+    if NUM_REWARD == 7:
+        reward_speed = tf.where(reward[:,:, 4]*3.6 < 30.0, reward[:,:, 4]*3.6/10, -0.3*reward[:,:, 4]*3.6+12.0)
+        reward_ = 0.5*(0.3*reward[:, :, 0] - 200*reward[:, :, 1] + reward_speed - 4 * reward[:, : , 5] - 3*reward[:, :, 6])
+    else:
+        reward_ = reward[:, :, 0]
 
     return_ = discounted_return.discounted_return(
-        reward[:,:,0], length, discount)[:, 0]
+        reward_, length, discount)[:, 0]
     return_ = tf.reshape(return_, (original_batch, amount))
     if PLAN_BOND:
         # return_ += bond*0.2
-        return_ += bond * 0.2
+        return_ += bond * 0.0
     # Re-fit belief to the best ones.
-    _, indices = tf.nn.top_k(return_, topk, sorted=False)
+    # topk_ -= 5
+    _, indices = tf.nn.top_k(return_, topk_, sorted=False)
+    topk_ -= 5
+    # amount = amount - 1
     indices += tf.range(original_batch)[:, None] * amount
     best_actions = tf.gather(action, indices)
     mean, variance = tf.nn.moments(best_actions, 1)
     stddev = tf.sqrt(variance + 1e-6)
-    return mean, stddev, command
+    return mean, stddev, command, topk_
 
   mean = tf.zeros((original_batch, horizon) + action_shape)
 
@@ -160,11 +177,11 @@ def cross_entropy_method(
       return tf.expand_dims(tf.transpose(x), 0)
 
   def f2():
-      x = tf.concat([mean[:, :, 0]+0.3, mean[:, :, 1]+0.2], 0)
+      x = tf.concat([mean[:, :, 0]+0.3, mean[:, :, 1]+0], 0)
       return tf.expand_dims(tf.transpose(x), 0)
 
   def f3():
-      x = tf.concat([mean[:, :, 0]+0.3, mean[:, :, 1]-0.2], 0)
+      x = tf.concat([mean[:, :, 0]+0.3, mean[:, :, 1]-0], 0)
       return tf.expand_dims(tf.transpose(x), 0)
   command = tf.reshape(command, (1, -1))
   if PLAN_BIAS:
@@ -172,8 +189,7 @@ def cross_entropy_method(
                   tf.reduce_all(tf.equal(command, 3)): f3}, default=f1, exclusive=True)
 
   stddev = tf.ones((original_batch, horizon) + action_shape)
-
-  mean, stddev, command = tf.scan(
-      iteration, tf.range(iterations), (mean, stddev, command * tf.ones([1, 12, 2], dtype=tf.float32)), back_prop=False)
+  mean, stddev, command, topk_ = tf.scan(
+      iteration, tf.range(iterations), (mean, stddev, command * tf.ones([1, 12, 2], dtype=tf.float32), topk_), back_prop=False)
   mean, stddev = mean[-1], stddev[-1]  # Select belief at last iterations.
   return mean

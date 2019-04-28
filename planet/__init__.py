@@ -213,10 +213,28 @@ from __future__ import print_function
 # SCENARIO = 'TOWN2_ONE_CURVE_STRAIGHT_NAV'
 # LOGDIR = '~/Data/planet/debug_carla'
 
+#
+# TASK_NAME = "{tasks: [carla]}"
+# H_SIZE, S_SIZE = 400, 60
+# EPISODE_LEN, COLLECT_EPISODE = 100, 30000.0
+# REPEATE, NUM_SEED = 1, 5
+# BATCHSIZE, CHUNK_LEN = 40, 50
+# IMG_SIZE = (64, 64)
+# REWARD_FUNC = 'custom5'
+# USE_SENSOR = 'use_rgb'
+# NUM_CHANNELS = 3
+# ENCODE = False
+# ENCODE_ALL = False
+# NUM_CHANNELS += 1 if ENCODE else 0
+# PLAN_BIAS = True
+# PLAN_BOND = False
+# SCENARIO = 'TOWN2_ONE_CURVE_0'
+# LOGDIR = '~/Data/planet_A/ENCODE_{}_BIAS_{}_BOND_{}_SIZE_{}'.format(ENCODE, PLAN_BIAS, PLAN_BOND, IMG_SIZE[0])
+
 
 TASK_NAME = "{tasks: [carla]}"
 H_SIZE, S_SIZE = 400, 60
-EPISODE_LEN, COLLECT_EPISODE = 60, 30000.0
+EPISODE_LEN, COLLECT_EPISODE = 100, 30000.0
 REPEATE, NUM_SEED = 1, 5
 BATCHSIZE, CHUNK_LEN = 40, 50
 IMG_SIZE = (64, 64)
@@ -227,8 +245,7 @@ ENCODE = False
 ENCODE_ALL = False
 NUM_CHANNELS += 1 if ENCODE else 0
 PLAN_BIAS = True
-PLAN_BOND = True
+PLAN_BOND = False
+NUM_REWARD = 2
 SCENARIO = 'TOWN2_ONE_CURVE_0'
-LOGDIR = '~/Data/planet_A/ENCODE_{}_BIAS_{}_BOND_{}_SIZE_{}'.format(ENCODE, PLAN_BIAS, PLAN_BOND, IMG_SIZE[0])
-
-
+LOGDIR = '~/Data/planet_A/ENCODE_{}_BIAS_{}_BOND_{}_SIZE_{}_reward_{}'.format(ENCODE, PLAN_BIAS, PLAN_BOND, IMG_SIZE[0], NUM_REWARD)

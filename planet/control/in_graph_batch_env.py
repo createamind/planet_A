@@ -17,6 +17,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from planet import NUM_REWARD
 
 import gym
 import numpy as np
@@ -51,7 +52,7 @@ class InGraphBatchEnv(object):
           'action', batch_dims + action_shape, action_dtype,
           tf.constant_initializer(0), trainable=False)
       self._reward = tf.get_variable(
-          'reward', batch_dims + (7,), tf.float32,
+          'reward', batch_dims + (NUM_REWARD,), tf.float32,
           tf.constant_initializer(0), trainable=False)
       # This variable should be boolean, but tf.scatter_update() does not
       # support boolean resource variables yet.
